@@ -19,15 +19,9 @@ page = st.sidebar.radio(
 # =========================
 # LOAD CUSTOMER DATA
 # =========================
-
 customers_df = pd.read_csv("data/customers.csv")
-
 customer_name = st.session_state.current_customer
-
-customer = customers_df[
-    customers_df["Name"] == customer_name
-].iloc[0]
-
+customer = customers_df[customers_df["Name"] == customer_name].iloc[0]
 points = int(customer["Points"])
 
 if points < 500:
@@ -39,37 +33,69 @@ else:
 
 tier_config = {
     "Bronze": {
-        "color": "#CA2851",
-        "bg": "#2B0A14",
+        "color": "#C4A69B",
+        "bg": "#ECE4DB",
         "emoji": "🥉",
         "next": "Silver",
         "next_points": 500,
-        "bar_color": "#CA2851"
+        "bar_color": "#C4A69B"
     },
     "Silver": {
-        "color": "#FF6766",
-        "bg": "#2B1010",
+        "color": "#B8AB9C",
+        "bg": "#ECE4DB",
         "emoji": "🥈",
         "next": "Gold",
         "next_points": 1000,
-        "bar_color": "#FF6766"
+        "bar_color": "#C4A69B"
     },
     "Gold": {
-        "color": "#FFB173",
-        "bg": "#1C1008",
+        "color": "#4A3530",
+        "bg": "#ECE4DB",
         "emoji": "🥇",
         "next": None,
         "next_points": 1000,
-        "bar_color": "#FFB173"
+        "bar_color": "#4A3530"
     }
 }
 
 tc = tier_config[tier]
 
 # =========================
+# GAMIFICATION LOGIC
+# =========================
+purchase_count = 0
+streak_days = 0
+
+if os.path.exists("data/purchases.csv"):
+    purchases_df = pd.read_csv("data/purchases.csv")
+    cust_purchases = purchases_df[purchases_df["Customer"] == customer_name]
+    purchase_count = len(cust_purchases)
+    if purchase_count > 0:
+        streak_days = max(2, (purchase_count * 2) - 1)
+
+if points < 250:
+    milestone_target = 250
+    milestone_reward = "Points Starter Badge"
+elif points < 500:
+    milestone_target = 500
+    milestone_reward = "Silver Tier Status"
+elif points < 750:
+    milestone_target = 750
+    milestone_reward = "Elite Customer Milestone"
+elif points < 1000:
+    milestone_target = 1000
+    milestone_reward = "Gold VIP Tier Status"
+else:
+    milestone_target = points + 500
+    milestone_reward = "Legendary Elite Reward Group"
+
+points_to_milestone = max(0, milestone_target - points)
+milestone_pct = min(100, int((points / milestone_target) * 100)) if milestone_target > 0 else 100
+referral_code = f"RTX-{customer_name.replace(' ', '').upper()[:5]}-{points}"
+
+# =========================
 # WELCOME HEADER
 # =========================
-
 hour = datetime.now().hour
 if hour < 12:
     greeting = "Good morning"
@@ -90,11 +116,11 @@ initials = "".join([n[0].upper() for n in customer_name.split()][:2])
 
 st.markdown(f"""
 <div style="
-    background: linear-gradient(135deg, #1C1008 0%, #2B1420 100%);
+    background: linear-gradient(135deg, #ECE4DB 0%, #FFFFFF 100%);
     border-radius: 16px;
     padding: 24px 28px;
     margin-bottom: 24px;
-    border: 1px solid #FFB17340;
+    border: 1px solid #CFC8BE;
 ">
     <div style="display:flex; align-items:center; gap:16px; margin-bottom:16px;">
         <div style="
@@ -102,16 +128,16 @@ st.markdown(f"""
             border-radius:50%;
             background: {tc['color']};
             display:flex; align-items:center; justify-content:center;
-            font-size:20px; font-weight:700; color:#FFF6E8;
+            font-size:20px; font-weight:700; color:#FFFFFF;
             flex-shrink:0;
         ">{initials}</div>
         <div>
-            <p style="margin:0; color:#FFB173; font-size:13px;">{greeting},</p>
-            <h2 style="margin:0; color:#FFE3B3; font-size:22px; font-weight:700;">{customer_name}</h2>
+            <p style="margin:0; color:#C4A69B; font-size:13px; font-weight: 600;">{greeting},</p>
+            <h2 style="margin:0; color:#4A3530; font-size:22px; font-weight:700;">{customer_name}</h2>
         </div>
         <div style="
             margin-left:auto;
-            background:{tc['color']}22;
+            background:#FFFFFF;
             border:1px solid {tc['color']};
             border-radius:20px;
             padding:6px 16px;
@@ -122,18 +148,18 @@ st.markdown(f"""
     </div>
     <div style="display:flex; gap:24px; margin-bottom:14px;">
         <div>
-            <p style="margin:0; color:#FFB17399; font-size:11px; text-transform:uppercase; letter-spacing:1px;">Total Points</p>
-            <p style="margin:0; color:#FFE3B3; font-size:24px; font-weight:700;">{points:,}</p>
+            <p style="margin:0; color:#4A3530; font-size:11px; text-transform:uppercase; letter-spacing:1px; opacity:0.8;">Total Points</p>
+            <p style="margin:0; color:#4A3530; font-size:24px; font-weight:700;">{points:,}</p>
         </div>
-        <div style="width:1px; background:#FFB17330;"></div>
+        <div style="width:1px; background:#CFC8BE;"></div>
         <div>
-            <p style="margin:0; color:#FFB17399; font-size:11px; text-transform:uppercase; letter-spacing:1px;">Progress</p>
-            <p style="margin:0; color:#FFE3B3; font-size:14px; font-weight:600; margin-top:4px;">{progress_label}</p>
+            <p style="margin:0; color:#4A3530; font-size:11px; text-transform:uppercase; letter-spacing:1px; opacity:0.8;">Progress</p>
+            <p style="margin:0; color:#C4A69B; font-size:14px; font-weight:600; margin-top:4px;">{progress_label}</p>
         </div>
     </div>
-    <div style="background:#FFB17322; border-radius:999px; height:8px; overflow:hidden;">
+    <div style="background:#CFC8BE80; border-radius:999px; height:8px; overflow:hidden;">
         <div style="
-            background:{tc['color']};
+            background:{tc['bar_color']};
             width:{min(progress_pct, 100)}%;
             height:100%;
             border-radius:999px;
@@ -141,63 +167,106 @@ st.markdown(f"""
         "></div>
     </div>
     <div style="display:flex; justify-content:space-between; margin-top:6px;">
-        <span style="font-size:11px; color:#FFB17380;">0</span>
-        <span style="font-size:11px; color:#FFB17380;">{tc['next_points']} pts</span>
+        <span style="font-size:11px; color:#C4A69B;">0</span>
+        <span style="font-size:11px; color:#C4A69B;">{tc['next_points']} pts</span>
     </div>
 </div>
 """, unsafe_allow_html=True)
 
 # =========================
-# DASHBOARD
+# DASHBOARD PAGE
 # =========================
-
 if page == "🏠 Dashboard":
-
-    leaderboard = customers_df.sort_values(
-        by="Points", ascending=False
-    ).reset_index(drop=True)
-
+    leaderboard = customers_df.sort_values(by="Points", ascending=False).reset_index(drop=True)
     rank = leaderboard[leaderboard["Name"] == customer_name].index[0] + 1
 
     col1, col2, col3 = st.columns(3)
 
     with col1:
         st.markdown(f"""
-        <div style="background:#1C1008; border:1px solid #FFB17340; border-radius:12px; padding:16px; text-align:center;">
-            <p style="margin:0; color:#FFB173; font-size:12px; text-transform:uppercase; letter-spacing:1px;">Points</p>
-            <p style="margin:4px 0 0; color:#FFE3B3; font-size:28px; font-weight:700;">{points:,}</p>
+        <div style="background:#ECE4DB; border:1px solid #CFC8BE; border-radius:12px; padding:16px; text-align:center;">
+            <p style="margin:0; color:#C4A69B; font-size:12px; text-transform:uppercase; letter-spacing:1px; font-weight:600;">Points</p>
+            <p style="margin:4px 0 0; color:#4A3530; font-size:28px; font-weight:700;">{points:,}</p>
         </div>
         """, unsafe_allow_html=True)
 
     with col2:
         st.markdown(f"""
-        <div style="background:#1C1008; border:1px solid #FFB17340; border-radius:12px; padding:16px; text-align:center;">
-            <p style="margin:0; color:#FFB173; font-size:12px; text-transform:uppercase; letter-spacing:1px;">Tier</p>
+        <div style="background:#ECE4DB; border:1px solid #CFC8BE; border-radius:12px; padding:16px; text-align:center;">
+            <p style="margin:0; color:#C4A69B; font-size:12px; text-transform:uppercase; letter-spacing:1px; font-weight:600;">Tier</p>
             <p style="margin:4px 0 0; color:{tc['color']}; font-size:28px; font-weight:700;">{tc['emoji']} {tier}</p>
         </div>
         """, unsafe_allow_html=True)
 
     with col3:
         st.markdown(f"""
-        <div style="background:#1C1008; border:1px solid #FFB17340; border-radius:12px; padding:16px; text-align:center;">
-            <p style="margin:0; color:#FFB173; font-size:12px; text-transform:uppercase; letter-spacing:1px;">Rank</p>
-            <p style="margin:4px 0 0; color:#FFE3B3; font-size:28px; font-weight:700;">#{rank}</p>
+        <div style="background:#ECE4DB; border:1px solid #CFC8BE; border-radius:12px; padding:16px; text-align:center;">
+            <p style="margin:0; color:#C4A69B; font-size:12px; text-transform:uppercase; letter-spacing:1px; font-weight:600;">Rank</p>
+            <p style="margin:4px 0 0; color:#4A3530; font-size:28px; font-weight:700;">#{rank}</p>
         </div>
         """, unsafe_allow_html=True)
 
-    st.markdown("<div style='margin-top:20px;'></div>", unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    st.subheader("🔥 Your Activity & Streaks")
+    g_col1, g_col2 = st.columns(2)
+    
+    with g_col1:
+        st.markdown(f"""
+        <div style="background:#FFFFFF; border:1px solid #CFC8BE; border-radius:14px; padding:20px; display:flex; align-items:center; gap:16px; height:120px; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
+            <div style="font-size:40px;">🔥</div>
+            <div>
+                <p style="margin:0; color:#4A3530; font-weight:700; font-size:18px;">{streak_days}-Purchase Streak</p>
+                <p style="margin:4px 0 0; color:#4A3530; font-size:13px; opacity:0.8;">You're an active loyalty shopper! Visit again soon to keep this streak alive.</p>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with g_col2:
+        st.markdown(f"""
+        <div style="background:#FFFFFF; border:1px solid #CFC8BE; border-radius:14px; padding:20px; display:flex; align-items:center; gap:16px; height:120px; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
+            <div style="font-size:40px;">🛍️</div>
+            <div>
+                <p style="margin:0; color:#4A3530; font-weight:700; font-size:18px;">{purchase_count} Orders Logged</p>
+                <p style="margin:4px 0 0; color:#4A3530; font-size:13px; opacity:0.8;">Every transaction earns tokens towards premium platform rewards.</p>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    st.subheader("🏆 Next Quest Target")
+    st.markdown(f"""
+    <div style="background:#4A3530; border:1px solid #C4A69B; border-radius:14px; padding:22px; color:#FFFFFF;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <div>
+                <span style="background:#ECE4DB; color:#4A3530; font-size:11px; font-weight:700; padding:3px 10px; border-radius:12px; text-transform:uppercase;">ACTIVE MISSION</span>
+                <h4 style="margin:6px 0 0; color:#FFFFFF; font-size:16px; font-weight:700;">Unlock: {milestone_reward}</h4>
+            </div>
+            <div style="text-align:right;">
+                <p style="margin:0; color:#ECE4DB; font-size:18px; font-weight:700;">{points_to_milestone:,} Pts Away</p>
+                <p style="margin:0; color:#FFFFFF; opacity:0.7; font-size:11px;">Target: {milestone_target} pts</p>
+            </div>
+        </div>
+        <div style="background:rgba(255,255,255,0.15); border-radius:999px; height:6px; overflow:hidden; margin-bottom:4px;">
+            <div style="background:#ECE4DB; width:{milestone_pct}%; height:100%; border-radius:999px;"></div>
+        </div>
+        <p style="margin:0; color:#FFFFFF; opacity:0.6; font-size:12px; text-align:right;">{milestone_pct}% Mission Complete</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("<br><hr>", unsafe_allow_html=True)
 
     if tier == "Bronze":
         points_needed = 500 - points
-        st.info(f"🎯 Earn {points_needed} more points to reach Silver Tier.")
+        st.info(f"Earn {points_needed} more points to reach Silver Tier.")
     elif tier == "Silver":
         points_needed = 1000 - points
-        st.info(f"🎯 Earn {points_needed} more points to reach Gold Tier.")
+        st.info(f"Earn {points_needed} more points to reach Gold Tier.")
     else:
         st.success("🥇 You have reached the highest tier!")
 
     st.markdown("---")
-
     st.subheader("🤖 AI Recommendations")
 
     if tier == "Bronze":
@@ -211,11 +280,9 @@ if page == "🏠 Dashboard":
         st.success("You are one of our most loyal customers.")
 
 # =========================
-# REWARDS
+# REWARDS PAGE
 # =========================
-
 elif page == "🎯 Rewards":
-
     st.title("🎁 Rewards")
 
     rewards = [
@@ -228,15 +295,15 @@ elif page == "🎯 Rewards":
 
     for r in rewards:
         unlocked = tier_rank[tier] >= tier_rank[r["min_tier"]]
-        border = "#FFB173" if unlocked else "#44281040"
-        opacity = "1" if unlocked else "0.5"
+        border = "#C4A69B" if unlocked else "#CFC8BE80"
+        opacity = "1" if unlocked else "0.4"
         lock = "" if unlocked else "🔒 "
-        badge_bg = "#FFB17322" if unlocked else "#44281022"
-        badge_color = "#FFB173" if unlocked else "#FFB17360"
+        badge_bg = "#FFFFFF" if unlocked else "#CFC8BE20"
+        badge_color = "#4A3530" if unlocked else "#4A353060"
 
         st.markdown(f"""
         <div style="
-            background:#1C1008;
+            background:#ECE4DB;
             border:1px solid {border};
             border-radius:12px;
             padding:16px 20px;
@@ -245,12 +312,13 @@ elif page == "🎯 Rewards":
             display:flex;
             align-items:center;
             justify-content:space-between;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
         ">
             <div style="display:flex; align-items:center; gap:14px;">
                 <span style="font-size:28px;">{r['emoji']}</span>
                 <div>
-                    <p style="margin:0; color:#FFE3B3; font-weight:600; font-size:15px;">{lock}{r['name']}</p>
-                    <p style="margin:2px 0 0; color:#FFB17399; font-size:12px;">{r['min_tier']} Tier required</p>
+                    <p style="margin:0; color:#4A3530; font-weight:600; font-size:15px;">{lock}{r['name']}</p>
+                    <p style="margin:2px 0 0; color:#C4A69B; font-size:12px;">{r['min_tier']} Tier required</p>
                 </div>
             </div>
             <div style="
@@ -266,11 +334,9 @@ elif page == "🎯 Rewards":
         """, unsafe_allow_html=True)
 
 # =========================
-# REDEEM  ← WORKING NOW
+# REDEEM PAGE
 # =========================
-
 elif page == "🎁 Redeem":
-
     st.title("🎁 Rewards Catalog")
 
     redeem_items = [
@@ -280,7 +346,6 @@ elif page == "🎁 Redeem":
     ]
 
     tier_rank = {"Bronze": 0, "Silver": 1, "Gold": 2}
-
     col1, col2, col3 = st.columns(3)
     cols = [col1, col2, col3]
 
@@ -292,31 +357,28 @@ elif page == "🎁 Redeem":
             if unlocked:
                 st.markdown(f"""
                 <div style="
-                    background:#1C1008;
-                    border:1px solid #FFB173;
+                    background:#ECE4DB;
+                    border:1px solid #C4A69B;
                     border-radius:14px;
                     padding:20px;
                     text-align:center;
                     margin-bottom:8px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.02);
                 ">
                     <div style="font-size:36px; margin-bottom:8px;">{item['emoji']}</div>
-                    <p style="color:#FFB173; font-weight:700; font-size:14px; margin:0;">{item['name']}</p>
-                    <p style="color:#FFE3B3; font-size:20px; font-weight:700; margin:6px 0;">{item['points']} pts</p>
-                    <p style="color:{'#4CAF50' if can_afford else '#FF6766'}; font-size:12px; margin:0;">
-                        {'✅ You can redeem this' if can_afford else f"❌ Need {item['points'] - points} more pts"}
+                    <p style="color:#4A3530; font-weight:700; font-size:14px; margin:0;">{item['name']}</p>
+                    <p style="color:#C4A69B; font-size:20px; font-weight:700; margin:6px 0;">{item['points']} pts</p>
+                    <p style="color:{'#2E7D32' if can_afford else '#D32F2F'}; font-size:12px; font-weight:600; margin:0;">
+                        {'✅ Available to redeem' if can_afford else f"❌ Need {item['points'] - points} more pts"}
                     </p>
                 </div>
                 """, unsafe_allow_html=True)
 
                 btn_label = f"Redeem {item['emoji']}"
                 if st.button(btn_label, key=f"redeem_{idx}", use_container_width=True, disabled=not can_afford):
-                    # 1. Deduct points from customers.csv
-                    customers_df.loc[
-                        customers_df["Name"] == customer_name, "Points"
-                    ] = points - item["points"]
+                    customers_df.loc[customers_df["Name"] == customer_name, "Points"] = points - item["points"]
                     customers_df.to_csv("data/customers.csv", index=False)
 
-                    # 2. Log to redemptions.csv
                     redemption_row = pd.DataFrame([{
                         "Customer": customer_name,
                         "Reward": item["name"],
@@ -329,91 +391,66 @@ elif page == "🎁 Redeem":
                         updated = pd.concat([existing, redemption_row], ignore_index=True)
                     else:
                         updated = redemption_row
-
                     updated.to_csv("data/redemptions.csv", index=False)
 
-                    # 3. Show success & refresh
-                    st.success(f"🎉 {item['name']} redeemed! {item['points']} points deducted.")
+                    st.success(f"🎉 {item['name']} redeemed successfully!")
                     st.balloons()
                     st.rerun()
-
             else:
                 st.markdown(f"""
                 <div style="
-                    background:#1C1008;
-                    border:1px solid #44281060;
+                    background:#FFFFFF;
+                    border:1px solid #CFC8BE;
                     border-radius:14px;
                     padding:20px;
                     text-align:center;
-                    opacity:0.5;
+                    opacity:0.4;
                     margin-bottom:8px;
                 ">
                     <div style="font-size:36px; margin-bottom:8px;">🔒</div>
-                    <p style="color:#FFB17360; font-weight:700; font-size:14px; margin:0;">{item['name']}</p>
-                    <p style="color:#FFE3B380; font-size:20px; font-weight:700; margin:6px 0;">{item['points']} pts</p>
-                    <p style="color:#FFB17350; font-size:12px; margin:0;">{item['min_tier']} Tier Required</p>
+                    <p style="color:#4A353090; font-weight:700; font-size:14px; margin:0;">{item['name']}</p>
+                    <p style="color:#CFC8BE; font-size:20px; font-weight:700; margin:6px 0;">{item['points']} pts</p>
+                    <p style="color:#4A3530; opacity:0.6; font-size:12px; margin:0;">{item['min_tier']} Tier Required</p>
                 </div>
                 """, unsafe_allow_html=True)
-
                 st.button("🔒 Locked", key=f"locked_{idx}", use_container_width=True, disabled=True)
 
-    st.markdown("---")
-    st.subheader("🎯 Your Membership Status")
-
-    remaining = points  # shown after potential rerun
-    if tier == "Bronze":
-        st.warning(f"🥉 Bronze access — {remaining} pts remaining")
-    elif tier == "Silver":
-        st.info(f"🥈 Silver access — {remaining} pts remaining")
-    else:
-        st.success(f"🥇 Gold access — {remaining} pts remaining")
-
 # =========================
-# HISTORY
+# HISTORY PAGE
 # =========================
-
 elif page == "📜 History":
-
     st.title("📜 Activity History")
-
     st.subheader("🛒 Purchase History")
 
     if os.path.exists("data/purchases.csv"):
         purchases = pd.read_csv("data/purchases.csv")
         customer_purchases = purchases[purchases["Customer"] == customer["Name"]]
-
         if len(customer_purchases) > 0:
             st.dataframe(customer_purchases)
         else:
-            st.info("No purchases yet.")
+            st.info("No purchases recorded yet.")
 
     st.markdown("---")
-
     st.subheader("🎁 Redeemed Rewards")
 
     if os.path.exists("data/redemptions.csv"):
         history = pd.read_csv("data/redemptions.csv")
         customer_history = history[history["Customer"] == customer["Name"]]
-
         if len(customer_history) > 0:
             st.dataframe(customer_history)
         else:
             st.info("No rewards redeemed yet.")
-    else:
-        st.info("No rewards redeemed yet.")
 
 # =========================
-# PROFILE
+# PROFILE PAGE
 # =========================
-
 elif page == "👤 Profile":
-
     st.title("👤 Profile")
 
     st.markdown(f"""
     <div style="
-        background:#1C1008;
-        border:1px solid #FFB17340;
+        background:#4A3530;
+        border:1px solid #C4A69B;
         border-radius:16px;
         padding:24px;
         margin-bottom:16px;
@@ -422,50 +459,63 @@ elif page == "👤 Profile":
             <div style="
                 width:64px; height:64px;
                 border-radius:50%;
-                background:{tc['color']};
+                background:#FFFFFF;
                 display:flex; align-items:center; justify-content:center;
-                font-size:24px; font-weight:700; color:#FFF6E8;
+                font-size:24px; font-weight:700; color:#4A3530;
             ">{initials}</div>
             <div>
-                <h3 style="margin:0; color:#FFE3B3;">{customer_name}</h3>
+                <h3 style="margin:0; color:#FFFFFF;">{customer_name}</h3>
                 <span style="
-                    background:{tc['color']}22;
+                    background:#ECE4DB;
                     border:1px solid {tc['color']};
                     border-radius:20px;
                     padding:3px 12px;
-                    color:{tc['color']};
+                    color:#4A3530;
                     font-size:12px;
                     font-weight:600;
                 ">{tc['emoji']} {tier} Member</span>
             </div>
         </div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-            <div style="background:#FFB17310; border-radius:10px; padding:12px;">
-                <p style="margin:0; color:#FFB17399; font-size:11px; text-transform:uppercase; letter-spacing:1px;">Points</p>
-                <p style="margin:4px 0 0; color:#FFE3B3; font-size:20px; font-weight:700;">{points:,}</p>
+            <div style="background:rgba(255,255,255,0.08); border-radius:10px; padding:12px; border: 1px solid #CFC8BE;">
+                <p style="margin:0; color:#ECE4DB; font-size:11px; text-transform:uppercase; letter-spacing:1px;">Points</p>
+                <p style="margin:4px 0 0; color:#FFFFFF; font-size:20px; font-weight:700;">{points:,}</p>
             </div>
-            <div style="background:#FFB17310; border-radius:10px; padding:12px;">
-                <p style="margin:0; color:#FFB17399; font-size:11px; text-transform:uppercase; letter-spacing:1px;">Tier</p>
-                <p style="margin:4px 0 0; color:{tc['color']}; font-size:20px; font-weight:700;">{tier}</p>
+            <div style="background:rgba(255,255,255,0.08); border-radius:10px; padding:12px; border: 1px solid #CFC8BE;">
+                <p style="margin:0; color:#ECE4DB; font-size:11px; text-transform:uppercase; letter-spacing:1px;">Tier</p>
+                <p style="margin:4px 0 0; color:#ECE4DB; font-size:20px; font-weight:700;">{tier}</p>
             </div>
         </div>
     </div>
     """, unsafe_allow_html=True)
 
+    st.subheader("📢 Spread the Word, Earn Perks")
+    st.markdown(f"""
+    <div style="background:#ECE4DB; border:1px solid #CFC8BE; border-radius:14px; padding:20px; margin-bottom:20px; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
+        <p style="margin:0; color:#4A3530; font-weight:700; font-size:15px;">🎁 Invite Your Friends</p>
+        <p style="margin:4px 0 14px; color:#4A3530; opacity:0.8; font-size:13px;">Share your code! When a friend signs up using your link, you both instantly pocket <b>50 bonus points</b>!</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    ref_col1, ref_col2 = st.columns([2.5, 1])
+    with ref_col1:
+        st.text_input("Your Unique Referral Code", value=referral_code, disabled=True, label_visibility="collapsed")
+    with ref_col2:
+        if st.button("Copy Invite Text", use_container_width=True):
+            st.toast(f"Copied: Code {referral_code}! Send to your friends! 🎉")
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
     st.subheader("Customer Details")
-
     st.text_input("Name", str(customer["Name"]), disabled=True)
-
     if "Phone" in customers_df.columns:
         st.text_input("Phone", str(customer["Phone"]), disabled=True)
-
     st.text_input("Tier", tier, disabled=True)
     st.text_input("Points", str(points), disabled=True)
 
 # =========================
 # LOGOUT
 # =========================
-
 if st.sidebar.button("Logout"):
     st.session_state.page = "home"
     if "current_customer" in st.session_state:
