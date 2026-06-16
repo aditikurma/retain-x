@@ -1,5 +1,5 @@
 Name,Phone,Points,Tier
-Shriya,9876543210,1850,Gold
+Shriya,9876543210,1050,Gold
 Amy,9876543211,1450,Gold
 Rahul,9876543212,1200,Gold
 Arjun,9876543213,950,Silver
@@ -11,7 +11,7 @@ Vikram,9876543218,180,Bronze
 Ananya,9876543219,75,Bronze
 Rohan,9876543220,1150,Gold
 Meera,9876543221,910,Silver
-Aditya,9876543222,680,Silver
+Aditya,9876543222,280,Bronze
 Tanvi,9876543223,540,Silver
 Kabir,9876543224,390,Bronze
 Neha,9876543225,290,Bronze
